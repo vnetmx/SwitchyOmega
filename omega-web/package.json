@@ -1,5 +1,5 @@
 {
-  "name": "omega-web",
+  "name": "switchyomega-web",
   "version": "0.0.1",
   "private": true,
   "devDependencies": {
@@ -18,9 +18,9 @@
     "grunt-mocha-test": "~0.11.0",
     "grunt-ng-annotate": "^0.3.2",
     "load-grunt-config": "^0.13.1",
-    "omega-pac": "../omega-pac"
+    "switchyomega-pac": "../omega-pac"
   },
   "scripts": {
-    "dev": "npm link omega-pac && npm link"
+    "dev": "npm link switchyomega-pac && npm link"
   }
 }

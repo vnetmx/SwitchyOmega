@@ -2,7 +2,7 @@
 Promise = require 'bluebird'
 Log = require './log'
 Storage = require './storage'
-OmegaPac = require 'omega-pac'
+OmegaPac = require 'switchyomega-pac'
 jsondiffpatch = require 'jsondiffpatch'
 
 class Options

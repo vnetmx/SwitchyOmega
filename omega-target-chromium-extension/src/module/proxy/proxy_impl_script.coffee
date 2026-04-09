@@ -1,4 +1,4 @@
-OmegaTarget = require('omega-target')
+OmegaTarget = require('switchyomega-target')
 Promise = OmegaTarget.Promise
 ProxyImpl = require('./proxy_impl')
 

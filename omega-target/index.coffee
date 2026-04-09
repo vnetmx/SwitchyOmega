@@ -4,7 +4,7 @@ module.exports =
   BrowserStorage: require('./src/browser_storage')
   Options: require('./src/options')
   OptionsSync: require('./src/options_sync')
-  OmegaPac: require('omega-pac')
+  OmegaPac: require('switchyomega-pac')
 
 for name, value of require('./src/utils.coffee')
   module.exports[name] = value

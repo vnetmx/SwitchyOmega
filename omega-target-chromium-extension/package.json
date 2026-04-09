@@ -1,5 +1,5 @@
 {
-  "name": "omega-target-chromium-extension",
+  "name": "switchyomega-target-chromium-extension",
   "version": "0.0.1",
   "private": true,
   "main": "./index",
@@ -22,15 +22,15 @@
   },
   "dependencies": {
     "heap": "^0.2.6",
-    "omega-target": "../omega-target",
-    "omega-web": "../omega-web",
-    "omega-pac": "../omega-pac",
+    "switchyomega-target": "../omega-target",
+    "switchyomega-web": "../omega-web",
+    "switchyomega-pac": "../omega-pac",
     "xhr": "^1.16.0"
   },
   "browser": {
-    "omega-target": "./omega_target_shim.js"
+    "switchyomega-target": "./omega_target_shim.js"
   },
   "scripts": {
-    "dev": "npm link omega-target && npm link omega-web && npm link omega-pac"
+    "dev": "npm link switchyomega-target && npm link switchyomega-web && npm link switchyomega-pac"
   }
 }

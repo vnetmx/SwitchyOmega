@@ -1,4 +1,4 @@
-OmegaTarget = require('omega-target')
+OmegaTarget = require('switchyomega-target')
 # The browser only accepts native promises as onRequest return values.
 # DO NOT USE Bluebird Promises here!
 NativePromise = Promise ? null

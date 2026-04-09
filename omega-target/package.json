@@ -1,5 +1,5 @@
 {
-  "name": "omega-target",
+  "name": "switchyomega-target",
   "version": "0.0.1",
   "private": true,
   "main": "./index.js",
@@ -23,13 +23,13 @@
     "bluebird": "^2.3.2",
     "jsondiffpatch": "^0.1.8",
     "limiter": "^1.0.5",
-    "omega-pac": "../omega-pac"
+    "switchyomega-pac": "../omega-pac"
   },
   "browser": {
-    "omega-pac": "./omega_pac_shim.js"
+    "switchyomega-pac": "./omega_pac_shim.js"
   },
   "scripts": {
-    "dev": "npm link omega-pac && npm link",
+    "dev": "npm link switchyomega-pac && npm link",
     "test": "grunt test"
   }
 }

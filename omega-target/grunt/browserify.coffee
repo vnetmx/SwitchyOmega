@@ -4,7 +4,7 @@ module.exports =
       'index.js': 'index.coffee'
     options:
       transform: ['coffeeify']
-      exclude: ['bluebird', 'jsondiffpatch', 'omega-pac']
+      exclude: ['bluebird', 'jsondiffpatch', 'switchyomega-pac']
       browserifyOptions:
         extensions: '.coffee'
         builtins: []

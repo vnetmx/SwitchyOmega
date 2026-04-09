@@ -2,7 +2,7 @@
 Promise = require 'bluebird'
 Storage = require './storage'
 Log = require './log'
-{Revision} = require 'omega-pac'
+{Revision} = require 'switchyomega-pac'
 jsondiffpatch = require 'jsondiffpatch'
 TokenBucket = require('limiter').TokenBucket
 
