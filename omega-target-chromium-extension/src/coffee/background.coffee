@@ -45,10 +45,17 @@ drawIcon = (resultColor, profileColor) ->
   return icon if icon
   try
     if not drawContext?
-      drawContext = document.getElementById('canvas-icon').getContext('2d')
+      # MV3: service workers have no DOM; use OffscreenCanvas.
+      canvas = if typeof OffscreenCanvas != 'undefined'
+        new OffscreenCanvas(128, 128)
+      else
+        document.getElementById('canvas-icon')
+      drawContext = canvas.getContext('2d')
 
     icon = {}
     for size in [16, 19, 24, 32, 38]
+      drawContext.canvas.width = size
+      drawContext.canvas.height = size
       drawContext.scale(size, size)
       drawContext.clearRect(0, 0, 1, 1)
       if resultColor?
@@ -212,7 +219,7 @@ options._inspect = new OmegaTargetCurrent.Inspect (url, tab) ->
 
     title = chrome.i18n.getMessage('browserAction_titleInspect', urlDisp) + '\n'
     title += action.title
-    chrome.browserAction.setTitle(title: title, tabId: tab.id)
+    chrome.action.setTitle(title: title, tabId: tab.id)
     tabs.setTabBadge(tab, {
       text: '#'
       color: action.resultColor

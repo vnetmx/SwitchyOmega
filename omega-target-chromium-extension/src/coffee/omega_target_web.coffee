@@ -91,7 +91,7 @@ angular.module('omegaTarget', []).factory 'omegaTarget', ($q) ->
     getMessage: chrome.i18n.getMessage.bind(chrome.i18n)
     openOptions: (hash) ->
       d = $q['defer']()
-      options_url = chrome.extension.getURL('options.html')
+      options_url = chrome.runtime.getURL('options.html')
       chrome.tabs.query url: options_url, (tabs) ->
         url = if hash
           urlParser.href = tabs[0]?.url || options_url

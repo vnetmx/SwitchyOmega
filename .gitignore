@@ -1,2 +1,5 @@
 node_modules
 bower_components
+omega-target-chromium-extension/release/
+omega-target-chromium-extension/build/
+omega-target-chromium-extension/release.zip
