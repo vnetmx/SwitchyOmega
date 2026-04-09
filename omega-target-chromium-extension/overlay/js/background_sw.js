@@ -1,28 +1,62 @@
 // MV3 Service Worker entry point for SwitchyOmega
 // Replaces background.html which loaded scripts via <script> tags.
 
-// Polyfill localStorage with a synchronous in-memory store.
-var _memStorage = {};
-var localStorage = new Proxy(_memStorage, {
+// Polyfill localStorage with an object that mimics the Web Storage API.
+// BrowserStorage class calls Object.getPrototypeOf(storage).getItem.call(...)
+// so the prototype must have getItem/setItem/removeItem/key/clear methods.
+var _memStore = {};
+
+function StorageShim() {}
+StorageShim.prototype.getItem = function(k) {
+  return _memStore.hasOwnProperty(k) ? _memStore[k] : null;
+};
+StorageShim.prototype.setItem = function(k, v) {
+  _memStore[k] = String(v);
+};
+StorageShim.prototype.removeItem = function(k) {
+  delete _memStore[k];
+};
+StorageShim.prototype.clear = function() {
+  for (var k in _memStore) {
+    if (_memStore.hasOwnProperty(k)) delete _memStore[k];
+  }
+};
+StorageShim.prototype.key = function(index) {
+  var keys = Object.keys(_memStore);
+  return index < keys.length ? keys[index] : null;
+};
+Object.defineProperty(StorageShim.prototype, 'length', {
+  get: function() { return Object.keys(_memStore).length; }
+});
+
+var localStorage = new StorageShim();
+
+// Allow bracket notation: localStorage['key'] = 'value'
+// by also defining a Proxy wrapper.
+var localStorageProxy = new Proxy(localStorage, {
   get: function(target, prop) {
-    if (prop === 'getItem') return function(k) { return target[k] || null; };
-    if (prop === 'setItem') return function(k, v) { target[k] = String(v); };
-    if (prop === 'removeItem') return function(k) { delete target[k]; };
-    if (prop === 'clear') return function() {
-      for (var k in target) delete target[k];
-    };
-    if (prop === 'length') return Object.keys(target).length;
-    return target[prop];
+    // Prioritize own methods/properties
+    if (prop in target || prop in StorageShim.prototype) {
+      return target[prop];
+    }
+    return _memStore.hasOwnProperty(prop) ? _memStore[prop] : undefined;
   },
   set: function(target, prop, value) {
-    target[prop] = String(value);
+    if (prop in StorageShim.prototype) return true;
+    _memStore[prop] = String(value);
     return true;
   },
   deleteProperty: function(target, prop) {
-    delete target[prop];
+    delete _memStore[prop];
     return true;
   }
 });
+
+// Override the proxy's prototype to return StorageShim.prototype
+// so that Object.getPrototypeOf(localStorage) returns correct proto.
+Object.setPrototypeOf(localStorageProxy, StorageShim.prototype);
+
+var localStorage = localStorageProxy;
 
 // Polyfill window/self globals
 var window = self;
@@ -33,8 +67,9 @@ if (typeof navigator === 'undefined') {
   var navigator = { userAgent: 'ServiceWorker' };
 }
 
-// Polyfill document for scripts that need it
+// Polyfill document for scripts that reference DOM
 var document = {
+  _canvasCache: null,
   getElementById: function(id) {
     if (id === 'canvas-icon') {
       if (!document._canvasCache) {
@@ -45,52 +80,32 @@ var document = {
     return null;
   },
   createElement: function(tag) {
-    // Return a minimal stub — used by FileSaver and url parser
     return {
-      style: {},
-      href: '',
-      protocol: '',
-      hostname: '',
-      pathname: '',
-      search: '',
-      hash: '',
-      click: function() {},
-      setAttribute: function() {},
-      appendChild: function() {},
-      dispatchEvent: function() {}
+      style: {}, href: '', protocol: '', hostname: '',
+      pathname: '', search: '', hash: '',
+      click: function() {}, setAttribute: function() {},
+      appendChild: function() {}, dispatchEvent: function() {}
     };
   },
-  createElementNS: function() {
-    return document.createElement();
-  },
-  createEvent: function() {
-    return { initEvent: function() {} };
-  },
+  createElementNS: function() { return document.createElement(); },
+  createEvent: function() { return { initEvent: function() {} }; },
   body: {
-    appendChild: function() {},
-    removeChild: function() {},
-    on: function() {},
-    off: function() {}
+    appendChild: function() {}, removeChild: function() {},
+    on: function() {}, off: function() {}
   }
 };
 window.document = document;
 
-// Stub MouseEvent for FileSaver
-if (typeof MouseEvent === 'undefined') {
-  function MouseEvent() {}
-}
+// Stub DOM constructors for FileSaver.js
+if (typeof MouseEvent === 'undefined') { function MouseEvent() {} }
+if (typeof HTMLElement === 'undefined') { function HTMLElement() {} }
 
-// Stub HTMLElement for FileSaver
-if (typeof HTMLElement === 'undefined') {
-  function HTMLElement() {}
-}
-
-// Stub saveAs since FileSaver can't work in service workers
+// Pre-stub saveAs (FileSaver can't work in service workers)
 var saveAs = function() {
   console.warn('saveAs not available in service worker');
 };
 
-// Load all scripts in the same order as the old background.html
+// Load scripts in the same order as the old background.html
 try {
   importScripts(
     'js/log_error.js',
@@ -104,5 +119,5 @@ try {
     'js/background.js'
   );
 } catch(e) {
-  console.error('SwitchyOmega service worker init error:', e);
+  console.error('SwitchyOmega SW init error:', e);
 }
