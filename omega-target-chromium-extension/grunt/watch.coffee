@@ -9,10 +9,10 @@ module.exports =
     files: ['../omega-locales/**/*']
     tasks: ['po2crx:locales']
   copy_web:
-    files: ['node_modules/omega-web/build/**/*']
+    files: ['node_modules/switchyomega-web/build/**/*']
     tasks: ['copy:web']
   copy_target:
-    files: ['node_modules/omega-target/omega_target.min.js']
+    files: ['node_modules/switchyomega-target/omega_target.min.js']
     tasks: ['copy:target']
   copy_overlay:
     files: ['overlay/**/*']

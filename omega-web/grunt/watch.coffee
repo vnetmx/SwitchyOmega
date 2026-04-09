@@ -7,7 +7,7 @@ module.exports =
     tasks: ['coffeelint:tasks', 'default']
   copy_pac:
     files:
-      'node_modules/omega-pac/omega_pac.min.js'
+      'node_modules/switchyomega-pac/omega_pac.min.js'
     tasks: 'copy:pac'
   copy_lib:
     files:

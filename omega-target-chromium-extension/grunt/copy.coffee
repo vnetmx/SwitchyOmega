@@ -7,7 +7,7 @@ module.exports =
   target:
     files:
       'build/js/omega_target.min.js':
-        'node_modules/omega-target/omega_target.min.js'
+        'node_modules/switchyomega-target/omega_target.min.js'
   target_self:
     src: 'omega_target_chromium_extension.min.js'
     dest: 'build/js/'
