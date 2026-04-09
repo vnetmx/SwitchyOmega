@@ -1,7 +1,9 @@
 module.exports =
   pac:
     files:
+      # coffeelint: disable=max_line_length
       'build/js/omega_pac.min.js': 'node_modules/switchyomega-pac/omega_pac.min.js'
+      # coffeelint: enable=max_line_length
   lib:
     expand: true
     cwd: 'lib'
