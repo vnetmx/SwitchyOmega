@@ -50,22 +50,33 @@ angular.module('omegaTarget', []).factory 'omegaTarget', ($q) ->
   omegaTarget =
     options: null
     state: (name, value) ->
+      # MV3: service worker localStorage is separate from extension pages.
+      # Always use sendMessage to read/write state from the background.
       if arguments.length == 1
-        getValue = (key) -> try JSON.parse(localStorage[prefix + key])
-        if Array.isArray(name)
-          return $q.when(name.map(getValue))
-        else
-          value = getValue(name)
+        # getState expects keys as: string, array, or {key: default} object
+        keys = if Array.isArray(name) then name else name
+        callBackground('getState', keys).then (result) ->
+          if Array.isArray(name)
+            return (result[key] for key in name)
+          else
+            return result[name]
       else
-        localStorage[prefix + name] = JSON.stringify(value)
-      return $q.when(value)
+        d = $q['defer']()
+        # setState: write to the background state store
+        items = {}
+        items[name] = value
+        callBackground('setState', items).then(
+          -> d.resolve(value)
+          (err) -> d.reject(err)
+        )
+        return d.promise
     lastUrl: (url) ->
       name = 'web.last_url'
       if url
         omegaTarget.state(name, url)
         url
       else
-        try JSON.parse(localStorage[prefix + name])
+        omegaTarget.state(name)
     addOptionsChangeCallback: (callback) ->
       optionsChangeCallback.push(callback)
     refresh: (args) ->

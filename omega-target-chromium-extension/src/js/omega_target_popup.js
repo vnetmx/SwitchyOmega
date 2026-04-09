@@ -24,19 +24,10 @@ var requestInfoCallback = null;
 
 OmegaTargetPopup = {
   getState: function (keys, cb) {
-    if (typeof localStorage === 'undefined' || !localStorage.length) {
-      callBackground('getState', [keys], cb);
-      return;
-    }
-    var results = {};
-    keys.forEach(function(key) {
-      try {
-        results[key] = JSON.parse(localStorage['omega.local.' + key]);
-      } catch (_) {
-        return null;
-      }
-    });
-    if (cb) cb(null, results);
+    // MV3: always call background. Service worker's localStorage is separate
+    // from extension pages' localStorage, so we can't read state locally.
+    callBackground('getState', [keys], cb);
+    return;
   },
   applyProfile: function (name, cb) {
     callBackgroundNoReply('applyProfile', [name], cb);
