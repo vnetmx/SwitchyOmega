@@ -227,6 +227,13 @@ class Options
         options['+auto_detect'] = OmegaPac.Profiles.create(
           name: 'auto_detect'
           profileType: 'PacProfile'
+          # SECURITY (SEC-013): WPAD over plain HTTP is a well-known MITM
+          # attack vector — a local network attacker can intercept this request
+          # and serve a malicious PAC script. Users should be warned about this
+          # risk when enabling auto-detect on untrusted networks. The HTTPS
+          # enforcement in fetchUrl does NOT apply here because this URL is
+          # passed directly to the browser's proxy settings API (not fetched
+          # by the extension), so the browser itself handles the WPAD request.
           pacUrl: 'http://wpad/wpad.dat'
           color: '#00cccc'
         )

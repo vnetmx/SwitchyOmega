@@ -345,6 +345,12 @@ module.exports = exports =
               # 4. And finally, a semicolon to terminate the final statement.
               # Wait a moment. Do we really need to go this far? I don't know.
 
+              # SECURITY (SEC-004): AST_Raw injects pacScript verbatim into
+              # the compiled PAC output, bypassing AST sanitization. This is
+              # an intentional design choice — PacProfile content is treated
+              # as trusted code supplied by the user or fetched from a
+              # user-configured HTTPS URL (enforced by fetchUrl). Never relax
+              # the fetchUrl HTTPS requirement without re-evaluating this risk.
               # TODO(catus): Remove the hack needed to insert raw code.
               new AST_Raw ';\n' + profile.pacScript + '\n\n/* End of PAC */;'
               new U2.AST_Return value:

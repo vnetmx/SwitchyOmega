@@ -3,6 +3,24 @@ OmegaPac = OmegaTarget.OmegaPac
 Promise = OmegaTarget.Promise
 ChromePort = require('./chrome_port')
 
+# Credential fields that must never be sent to external extensions.
+CREDENTIAL_KEYS = ['auth', 'username', 'password']
+
+# Deep-clone an options object with all proxy credential fields redacted.
+# This prevents the external API from leaking proxy passwords (SEC-007).
+stripCredentials = (options) ->
+  return options unless options and typeof options == 'object'
+  if Array.isArray(options)
+    return (stripCredentials(item) for item in options)
+  result = {}
+  for own key, value of options
+    if CREDENTIAL_KEYS.indexOf(key) >= 0
+      # Omit credential fields entirely rather than setting to null,
+      # so callers cannot distinguish "no auth" from "auth redacted".
+      continue
+    result[key] = stripCredentials(value)
+  return result
+
 module.exports = class ExternalApi
   constructor: (options) ->
     @options = options
@@ -56,7 +74,10 @@ module.exports = class ExternalApi
         port.postMessage({action: 'state', state: 'enabled'})
       when 'getOptions'
         return unless @checkPerm(port, 8)
-        port.postMessage({action: 'options', options: @options.getAll()})
+        # Strip all credential fields before sending options to external
+        # extensions (SEC-007). Proxy passwords must not leave this extension.
+        safeOptions = stripCredentials(@options.getAll())
+        port.postMessage({action: 'options', options: safeOptions})
       else
         port.postMessage(
           action: 'error'

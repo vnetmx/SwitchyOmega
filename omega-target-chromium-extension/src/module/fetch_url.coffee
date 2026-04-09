@@ -3,6 +3,12 @@ xhr = Promise.promisify(require('xhr'))
 Url = require('url')
 ContentTypeRejectedError = OmegaTarget.ContentTypeRejectedError
 
+# Allowed URL schemes for remote resource fetching (SEC-005).
+# Plain HTTP is rejected to prevent MITM replacement of PAC scripts and rule
+# lists. file: URLs are blocked upstream by OmegaPac.Profiles.isFileUrl before
+# they reach this function.
+ALLOWED_SCHEMES = ['https:']
+
 xhrWrapper = (args...) ->
   xhr(args...).catch (err) ->
     throw err unless err.isOperational
@@ -15,6 +21,18 @@ xhrWrapper = (args...) ->
     throw new OmegaTarget.HttpError(err)
 
 fetchUrl = (dest_url, opt_bypass_cache, opt_type_hints) ->
+  # Enforce HTTPS-only fetches (SEC-005). Reject plain HTTP URLs to prevent
+  # MITM or DNS-hijack attacks that silently replace PAC scripts/rule lists.
+  parsed_scheme = Url.parse(dest_url).protocol
+  if ALLOWED_SCHEMES.indexOf(parsed_scheme) < 0
+    return Promise.reject(
+      new Error(
+        "fetchUrl: insecure URL scheme '#{parsed_scheme}' rejected. " +
+        "Only HTTPS is allowed for remote resources. " +
+        "Update your profile to use an https:// URL."
+      )
+    )
+
   getResBody = ([response, body]) ->
     return body unless opt_type_hints
     contentType = response.headers['content-type']?.toLowerCase()
