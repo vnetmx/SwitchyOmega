@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SwitchyOmega Options</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/options.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <h1 class="logo">SwitchyOmega</h1>
+      <nav id="nav">
+        <div class="nav-section">Settings</div>
+        <a href="#general" class="nav-item" data-page="general">⚙ General</a>
+        <a href="#io" class="nav-item" data-page="io">💾 Import / Export</a>
+        <div class="nav-section">Profiles</div>
+        <div id="profile-nav"></div>
+        <a href="#" class="nav-item nav-add" id="add-profile">➕ New profile…</a>
+      </nav>
+      <div id="actions">
+        <button id="btn-apply" class="btn btn-primary" disabled>✓ Apply changes</button>
+        <button id="btn-discard" class="btn btn-muted" disabled>✗ Discard</button>
+      </div>
+    </aside>
+    <main id="content">
+      <div class="loading">Loading…</div>
+    </main>
+  </div>
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal" class="modal"></div>
+  </div>
+  <script src="js/options/app.js" type="module"></script>
+</body>
+</html>
