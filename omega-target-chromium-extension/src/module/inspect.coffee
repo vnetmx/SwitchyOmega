@@ -22,21 +22,22 @@ module.exports = class Inspect
       "ftp://*/*"
     ]
 
-    chrome.contextMenus.create({
+    # MV3: wrap in try/catch — items may already exist from a previous SW run
+    try chrome.contextMenus.create({
       id: 'inspectFrame'
       title: chrome.i18n.getMessage('contextMenu_inspectFrame')
       contexts: ['frame']
       documentUrlPatterns: webResource
     })
 
-    chrome.contextMenus.create({
+    try chrome.contextMenus.create({
       id: 'inspectLink'
       title: chrome.i18n.getMessage('contextMenu_inspectLink')
       contexts: ['link']
       targetUrlPatterns: webResource
     })
 
-    chrome.contextMenus.create({
+    try chrome.contextMenus.create({
       id: 'inspectElement'
       title: chrome.i18n.getMessage('contextMenu_inspectElement')
       contexts: [
