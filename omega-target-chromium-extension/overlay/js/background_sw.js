@@ -83,15 +83,15 @@ self.XMLHttpRequest.DONE = 4;
 
 // === 5. Load scripts one by one so we can identify crashes ===
 var _scripts = [
-  'js/log_error.js',
-  'lib/FileSaver/FileSaver.min.js',
-  'js/omega_debug.js',
-  'js/background_preload.js',
-  'js/omega_pac.min.js',
-  'js/omega_target.min.js',
-  'js/omega_target_chromium_extension.min.js',
-  'img/icons/draw_omega.js',
-  'js/background.js'
+  '../js/log_error.js',
+  '../lib/FileSaver/FileSaver.min.js',
+  '../js/omega_debug.js',
+  '../js/background_preload.js',
+  '../js/omega_pac.min.js',
+  '../js/omega_target.min.js',
+  '../js/omega_target_chromium_extension.min.js',
+  '../img/icons/draw_omega.js',
+  '../js/background.js'
 ];
 
 var _swErrors = [];
