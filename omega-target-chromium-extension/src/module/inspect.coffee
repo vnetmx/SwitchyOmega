@@ -6,14 +6,14 @@ module.exports = class Inspect
   _enabled: false
   constructor: (onInspect) ->
     @onInspect = onInspect
+    # MV3: use onClicked listener instead of onclick property
+    chrome.contextMenus?.onClicked?.addListener (info, tab) =>
+      if @_enabled and @propForMenuItem[info.menuItemId]?
+        @inspect(info, tab)
 
   enable: ->
     return unless chrome.contextMenus?
-    # We don't need this API. However its presence indicates that Chrome >= 35,
-    # which provides the menuItemId we need in contextMenu callback.
-    # https://developer.chrome.com/extensions/contextMenus
     return unless chrome.i18n.getUILanguage?
-
     return if @_enabled
 
     webResource = [
@@ -22,21 +22,10 @@ module.exports = class Inspect
       "ftp://*/*"
     ]
 
-    ### Not so useful...
-    chrome.contextMenus.create({
-      id: 'inspectPage'
-      title: chrome.i18n.getMessage('contextMenu_inspectPage')
-      contexts: ['page']
-      onclick: @inspect.bind(this)
-      documentUrlPatterns: webResource
-    })
-    ###
-
     chrome.contextMenus.create({
       id: 'inspectFrame'
       title: chrome.i18n.getMessage('contextMenu_inspectFrame')
       contexts: ['frame']
-      onclick: @inspect.bind(this)
       documentUrlPatterns: webResource
     })
 
@@ -44,7 +33,6 @@ module.exports = class Inspect
       id: 'inspectLink'
       title: chrome.i18n.getMessage('contextMenu_inspectLink')
       contexts: ['link']
-      onclick: @inspect.bind(this)
       targetUrlPatterns: webResource
     })
 
@@ -56,7 +44,6 @@ module.exports = class Inspect
         'video'
         'audio'
       ]
-      onclick: @inspect.bind(this)
       targetUrlPatterns: webResource
     })
 
