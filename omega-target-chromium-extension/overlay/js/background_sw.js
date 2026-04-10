@@ -1,120 +1,114 @@
-// MV3 Service Worker entry point for SwitchyOmega
-// Replaces background.html (MV2) with a service worker.
+// MV3 Service Worker — SwitchyOmega
+// Polyfills required because the background code was written for MV2 (DOM context).
 
-// === Polyfill: localStorage ===
-var _memStore = {};
+// === 1. localStorage polyfill ===
+var _ms = {};
 function StorageShim() {}
-StorageShim.prototype.getItem = function(k) { return _memStore.hasOwnProperty(k) ? _memStore[k] : null; };
-StorageShim.prototype.setItem = function(k, v) { _memStore[k] = String(v); };
-StorageShim.prototype.removeItem = function(k) { delete _memStore[k]; };
-StorageShim.prototype.clear = function() { for (var k in _memStore) if (_memStore.hasOwnProperty(k)) delete _memStore[k]; };
-StorageShim.prototype.key = function(i) { var keys = Object.keys(_memStore); return i < keys.length ? keys[i] : null; };
-Object.defineProperty(StorageShim.prototype, 'length', { get: function() { return Object.keys(_memStore).length; } });
-
-var ls = new StorageShim();
-var lsProxy = new Proxy(ls, {
-  get: function(t, p) { if (p in t || p in StorageShim.prototype) return t[p]; return _memStore.hasOwnProperty(p) ? _memStore[p] : undefined; },
-  set: function(t, p, v) { if (p in StorageShim.prototype) return true; _memStore[p] = String(v); return true; },
-  deleteProperty: function(t, p) { delete _memStore[p]; return true; }
+StorageShim.prototype.getItem = function(k) { return _ms.hasOwnProperty(k) ? _ms[k] : null; };
+StorageShim.prototype.setItem = function(k, v) { _ms[k] = String(v); };
+StorageShim.prototype.removeItem = function(k) { delete _ms[k]; };
+StorageShim.prototype.clear = function() { for (var k in _ms) if (_ms.hasOwnProperty(k)) delete _ms[k]; };
+StorageShim.prototype.key = function(i) { var keys = Object.keys(_ms); return i < keys.length ? keys[i] : null; };
+Object.defineProperty(StorageShim.prototype, 'length', { get: function() { return Object.keys(_ms).length; } });
+var _lsReal = new StorageShim();
+var localStorage = new Proxy(_lsReal, {
+  get: function(t, p) { if (p in t || p in StorageShim.prototype) return t[p]; return _ms.hasOwnProperty(p) ? _ms[p] : undefined; },
+  set: function(t, p, v) { _ms[p] = String(v); return true; },
+  deleteProperty: function(t, p) { delete _ms[p]; return true; }
 });
-Object.setPrototypeOf(lsProxy, StorageShim.prototype);
-var localStorage = lsProxy;
+Object.setPrototypeOf(localStorage, StorageShim.prototype);
 
-// === Polyfill: window/document/DOM stubs ===
+// === 2. window / document / DOM polyfills ===
 var window = self;
 window.localStorage = localStorage;
-
 var document = {
-  getElementById: function(id) { return id === 'canvas-icon' ? new OffscreenCanvas(128, 128) : null; },
-  createElement: function() { return { style:{}, href:'', protocol:'', hostname:'', pathname:'', search:'', hash:'', click:function(){}, setAttribute:function(){}, appendChild:function(){}, dispatchEvent:function(){} }; },
+  getElementById: function(id) {
+    if (id === 'canvas-icon') {
+      if (!this._c) this._c = new OffscreenCanvas(128, 128);
+      return this._c;
+    }
+    return null;
+  },
+  createElement: function() {
+    return { style:{}, href:'', protocol:'', hostname:'', pathname:'',
+             search:'', hash:'', click:function(){}, setAttribute:function(){},
+             appendChild:function(){}, removeChild:function(){},
+             dispatchEvent:function(){}, setAttribute:function(){},
+             nodeName:'', nodeType:1 };
+  },
   createElementNS: function() { return document.createElement(); },
-  createEvent: function() { return { initEvent: function(){} }; },
-  body: { appendChild:function(){}, removeChild:function(){}, on:function(){}, off:function(){} }
+  createEvent: function() { return { initEvent:function(){} }; },
+  body: { appendChild:function(){}, removeChild:function(){} }
 };
 window.document = document;
-if (typeof MouseEvent === 'undefined') { function MouseEvent(){} }
-if (typeof HTMLElement === 'undefined') { function HTMLElement(){} }
-var saveAs = function() {};
 
-// === Polyfill: XMLHttpRequest via fetch() ===
-// Service workers don't have XMLHttpRequest. The 'xhr' npm package used by
-// fetch_url.coffee needs it. This polyfill wraps fetch() in the XHR interface.
-function XMLHttpRequest() {
-  this.readyState = 0;
-  this.status = 0;
-  this.statusText = '';
-  this.responseText = '';
-  this.responseHeaders = {};
-  this._method = 'GET';
-  this._url = '';
-  this._headers = {};
-  this._async = true;
-}
-XMLHttpRequest.prototype.open = function(method, url, async) {
-  this._method = method;
-  this._url = url;
-  this._async = async !== false;
-  this.readyState = 1;
+// === 3. Constructor stubs ===
+if (typeof MouseEvent === 'undefined') self.MouseEvent = function(){};
+if (typeof HTMLElement === 'undefined') self.HTMLElement = function(){};
+self.saveAs = function() {};
+
+// === 4. XMLHttpRequest polyfill (fetch-based) ===
+self.XMLHttpRequest = function() {
+  this.readyState = 0; this.status = 0; this.statusText = '';
+  this.responseText = ''; this._rh = {};
+  this._method = 'GET'; this._url = ''; this._headers = {};
 };
-XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
-  this._headers[name] = value;
+self.XMLHttpRequest.prototype.open = function(m, u) { this._method = m; this._url = u; this.readyState = 1; };
+self.XMLHttpRequest.prototype.setRequestHeader = function(n, v) { this._headers[n] = v; };
+self.XMLHttpRequest.prototype.getResponseHeader = function(n) { return this._rh[n.toLowerCase()] || null; };
+self.XMLHttpRequest.prototype.getAllResponseHeaders = function() {
+  var r = ''; for (var k in this._rh) r += k + ': ' + this._rh[k] + '\r\n'; return r;
 };
-XMLHttpRequest.prototype.getResponseHeader = function(name) {
-  return this.responseHeaders[name.toLowerCase()] || null;
-};
-XMLHttpRequest.prototype.getAllResponseHeaders = function() {
-  var result = '';
-  for (var k in this.responseHeaders) {
-    result += k + ': ' + this.responseHeaders[k] + '\r\n';
-  }
-  return result;
-};
-XMLHttpRequest.prototype.send = function(body) {
+self.XMLHttpRequest.prototype.send = function(body) {
   var xhr = this;
   var opts = { method: this._method, headers: this._headers };
-  if (body && this._method !== 'GET') opts.body = body;
-
-  fetch(this._url, opts).then(function(response) {
-    xhr.status = response.status;
-    xhr.statusText = response.statusText;
-    xhr.responseHeaders = {};
-    response.headers.forEach(function(value, key) {
-      xhr.responseHeaders[key.toLowerCase()] = value;
-    });
-    return response.text();
+  if (body && this._method !== 'GET' && this._method !== 'HEAD') opts.body = body;
+  fetch(this._url, opts).then(function(resp) {
+    xhr.status = resp.status; xhr.statusText = resp.statusText; xhr._rh = {};
+    resp.headers.forEach(function(v, k) { xhr._rh[k.toLowerCase()] = v; });
+    return resp.text();
   }).then(function(text) {
-    xhr.responseText = text;
-    xhr.readyState = 4;
+    xhr.responseText = text; xhr.readyState = 4;
     if (typeof xhr.onreadystatechange === 'function') xhr.onreadystatechange();
-    if (xhr.status >= 200 && xhr.status < 300) {
-      if (typeof xhr.onload === 'function') xhr.onload();
-    } else {
-      if (typeof xhr.onerror === 'function') xhr.onerror();
-    }
+    if (xhr.status >= 200 && xhr.status < 400) { if (typeof xhr.onload === 'function') xhr.onload(); }
+    else { if (typeof xhr.onerror === 'function') xhr.onerror(); }
   }).catch(function(err) {
-    xhr.readyState = 4;
-    xhr.status = 0;
-    xhr.statusText = err.message;
+    xhr.readyState = 4; xhr.status = 0; xhr.statusText = err.message;
     if (typeof xhr.onreadystatechange === 'function') xhr.onreadystatechange();
     if (typeof xhr.onerror === 'function') xhr.onerror(err);
   });
 };
-XMLHttpRequest.prototype.abort = function() {};
-window.XMLHttpRequest = XMLHttpRequest;
+self.XMLHttpRequest.prototype.abort = function() {};
+self.XMLHttpRequest.DONE = 4;
 
-// === Load scripts ===
-try {
-  importScripts(
-    'js/log_error.js',
-    'lib/FileSaver/FileSaver.min.js',
-    'js/omega_debug.js',
-    'js/background_preload.js',
-    'js/omega_pac.min.js',
-    'js/omega_target.min.js',
-    'js/omega_target_chromium_extension.min.js',
-    'img/icons/draw_omega.js',
-    'js/background.js'
-  );
-} catch(e) {
-  console.error('SwitchyOmega SW init error:', e);
+// === 5. Load scripts one by one so we can identify crashes ===
+var _scripts = [
+  'js/log_error.js',
+  'lib/FileSaver/FileSaver.min.js',
+  'js/omega_debug.js',
+  'js/background_preload.js',
+  'js/omega_pac.min.js',
+  'js/omega_target.min.js',
+  'js/omega_target_chromium_extension.min.js',
+  'img/icons/draw_omega.js',
+  'js/background.js'
+];
+
+var _swErrors = [];
+for (var _i = 0; _i < _scripts.length; _i++) {
+  try {
+    importScripts(_scripts[_i]);
+  } catch(e) {
+    _swErrors.push(_scripts[_i] + ': ' + e.message);
+    console.error('[SW CRASH] ' + _scripts[_i], e);
+  }
+}
+
+// === 6. Fallback message handler if background.js failed to load ===
+// This ensures the popup/options can at least show an error instead of hanging.
+if (_swErrors.length > 0) {
+  chrome.runtime.onMessage.addListener(function(request, sender, respond) {
+    respond({ error: { message: 'Service worker errors: ' + _swErrors.join('; ') } });
+    return false;
+  });
 }
