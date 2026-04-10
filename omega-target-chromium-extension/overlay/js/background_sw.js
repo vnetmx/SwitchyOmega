@@ -1,111 +1,108 @@
 // MV3 Service Worker entry point for SwitchyOmega
-// Replaces background.html which loaded scripts via <script> tags.
+// Replaces background.html (MV2) with a service worker.
 
-// Polyfill localStorage with an object that mimics the Web Storage API.
-// BrowserStorage class calls Object.getPrototypeOf(storage).getItem.call(...)
-// so the prototype must have getItem/setItem/removeItem/key/clear methods.
+// === Polyfill: localStorage ===
 var _memStore = {};
-
 function StorageShim() {}
-StorageShim.prototype.getItem = function(k) {
-  return _memStore.hasOwnProperty(k) ? _memStore[k] : null;
-};
-StorageShim.prototype.setItem = function(k, v) {
-  _memStore[k] = String(v);
-};
-StorageShim.prototype.removeItem = function(k) {
-  delete _memStore[k];
-};
-StorageShim.prototype.clear = function() {
-  for (var k in _memStore) {
-    if (_memStore.hasOwnProperty(k)) delete _memStore[k];
-  }
-};
-StorageShim.prototype.key = function(index) {
-  var keys = Object.keys(_memStore);
-  return index < keys.length ? keys[index] : null;
-};
-Object.defineProperty(StorageShim.prototype, 'length', {
-  get: function() { return Object.keys(_memStore).length; }
+StorageShim.prototype.getItem = function(k) { return _memStore.hasOwnProperty(k) ? _memStore[k] : null; };
+StorageShim.prototype.setItem = function(k, v) { _memStore[k] = String(v); };
+StorageShim.prototype.removeItem = function(k) { delete _memStore[k]; };
+StorageShim.prototype.clear = function() { for (var k in _memStore) if (_memStore.hasOwnProperty(k)) delete _memStore[k]; };
+StorageShim.prototype.key = function(i) { var keys = Object.keys(_memStore); return i < keys.length ? keys[i] : null; };
+Object.defineProperty(StorageShim.prototype, 'length', { get: function() { return Object.keys(_memStore).length; } });
+
+var ls = new StorageShim();
+var lsProxy = new Proxy(ls, {
+  get: function(t, p) { if (p in t || p in StorageShim.prototype) return t[p]; return _memStore.hasOwnProperty(p) ? _memStore[p] : undefined; },
+  set: function(t, p, v) { if (p in StorageShim.prototype) return true; _memStore[p] = String(v); return true; },
+  deleteProperty: function(t, p) { delete _memStore[p]; return true; }
 });
+Object.setPrototypeOf(lsProxy, StorageShim.prototype);
+var localStorage = lsProxy;
 
-var localStorage = new StorageShim();
-
-// Allow bracket notation: localStorage['key'] = 'value'
-// by also defining a Proxy wrapper.
-var localStorageProxy = new Proxy(localStorage, {
-  get: function(target, prop) {
-    // Prioritize own methods/properties
-    if (prop in target || prop in StorageShim.prototype) {
-      return target[prop];
-    }
-    return _memStore.hasOwnProperty(prop) ? _memStore[prop] : undefined;
-  },
-  set: function(target, prop, value) {
-    if (prop in StorageShim.prototype) return true;
-    _memStore[prop] = String(value);
-    return true;
-  },
-  deleteProperty: function(target, prop) {
-    delete _memStore[prop];
-    return true;
-  }
-});
-
-// Override the proxy's prototype to return StorageShim.prototype
-// so that Object.getPrototypeOf(localStorage) returns correct proto.
-Object.setPrototypeOf(localStorageProxy, StorageShim.prototype);
-
-var localStorage = localStorageProxy;
-
-// Polyfill window/self globals
+// === Polyfill: window/document/DOM stubs ===
 var window = self;
 window.localStorage = localStorage;
 
-// Stub navigator if needed
-if (typeof navigator === 'undefined') {
-  var navigator = { userAgent: 'ServiceWorker' };
-}
-
-// Polyfill document for scripts that reference DOM
 var document = {
-  _canvasCache: null,
-  getElementById: function(id) {
-    if (id === 'canvas-icon') {
-      if (!document._canvasCache) {
-        document._canvasCache = new OffscreenCanvas(128, 128);
-      }
-      return document._canvasCache;
-    }
-    return null;
-  },
-  createElement: function(tag) {
-    return {
-      style: {}, href: '', protocol: '', hostname: '',
-      pathname: '', search: '', hash: '',
-      click: function() {}, setAttribute: function() {},
-      appendChild: function() {}, dispatchEvent: function() {}
-    };
-  },
+  getElementById: function(id) { return id === 'canvas-icon' ? new OffscreenCanvas(128, 128) : null; },
+  createElement: function() { return { style:{}, href:'', protocol:'', hostname:'', pathname:'', search:'', hash:'', click:function(){}, setAttribute:function(){}, appendChild:function(){}, dispatchEvent:function(){} }; },
   createElementNS: function() { return document.createElement(); },
-  createEvent: function() { return { initEvent: function() {} }; },
-  body: {
-    appendChild: function() {}, removeChild: function() {},
-    on: function() {}, off: function() {}
-  }
+  createEvent: function() { return { initEvent: function(){} }; },
+  body: { appendChild:function(){}, removeChild:function(){}, on:function(){}, off:function(){} }
 };
 window.document = document;
+if (typeof MouseEvent === 'undefined') { function MouseEvent(){} }
+if (typeof HTMLElement === 'undefined') { function HTMLElement(){} }
+var saveAs = function() {};
 
-// Stub DOM constructors for FileSaver.js
-if (typeof MouseEvent === 'undefined') { function MouseEvent() {} }
-if (typeof HTMLElement === 'undefined') { function HTMLElement() {} }
-
-// Pre-stub saveAs (FileSaver can't work in service workers)
-var saveAs = function() {
-  console.warn('saveAs not available in service worker');
+// === Polyfill: XMLHttpRequest via fetch() ===
+// Service workers don't have XMLHttpRequest. The 'xhr' npm package used by
+// fetch_url.coffee needs it. This polyfill wraps fetch() in the XHR interface.
+function XMLHttpRequest() {
+  this.readyState = 0;
+  this.status = 0;
+  this.statusText = '';
+  this.responseText = '';
+  this.responseHeaders = {};
+  this._method = 'GET';
+  this._url = '';
+  this._headers = {};
+  this._async = true;
+}
+XMLHttpRequest.prototype.open = function(method, url, async) {
+  this._method = method;
+  this._url = url;
+  this._async = async !== false;
+  this.readyState = 1;
 };
+XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
+  this._headers[name] = value;
+};
+XMLHttpRequest.prototype.getResponseHeader = function(name) {
+  return this.responseHeaders[name.toLowerCase()] || null;
+};
+XMLHttpRequest.prototype.getAllResponseHeaders = function() {
+  var result = '';
+  for (var k in this.responseHeaders) {
+    result += k + ': ' + this.responseHeaders[k] + '\r\n';
+  }
+  return result;
+};
+XMLHttpRequest.prototype.send = function(body) {
+  var xhr = this;
+  var opts = { method: this._method, headers: this._headers };
+  if (body && this._method !== 'GET') opts.body = body;
 
-// Load scripts in the same order as the old background.html
+  fetch(this._url, opts).then(function(response) {
+    xhr.status = response.status;
+    xhr.statusText = response.statusText;
+    xhr.responseHeaders = {};
+    response.headers.forEach(function(value, key) {
+      xhr.responseHeaders[key.toLowerCase()] = value;
+    });
+    return response.text();
+  }).then(function(text) {
+    xhr.responseText = text;
+    xhr.readyState = 4;
+    if (typeof xhr.onreadystatechange === 'function') xhr.onreadystatechange();
+    if (xhr.status >= 200 && xhr.status < 300) {
+      if (typeof xhr.onload === 'function') xhr.onload();
+    } else {
+      if (typeof xhr.onerror === 'function') xhr.onerror();
+    }
+  }).catch(function(err) {
+    xhr.readyState = 4;
+    xhr.status = 0;
+    xhr.statusText = err.message;
+    if (typeof xhr.onreadystatechange === 'function') xhr.onreadystatechange();
+    if (typeof xhr.onerror === 'function') xhr.onerror(err);
+  });
+};
+XMLHttpRequest.prototype.abort = function() {};
+window.XMLHttpRequest = XMLHttpRequest;
+
+// === Load scripts ===
 try {
   importScripts(
     'js/log_error.js',
