@@ -18,7 +18,12 @@ const SCHEMES = [
   { key: 'fallbackProxy', label: 'Default (fallback)', scheme: '' },
 ];
 
-const PROXY_SCHEMES = ['http', 'https', 'socks4', 'socks5'];
+const PROXY_SCHEMES = [
+  { value: 'http', label: 'HTTP' },
+  { value: 'https', label: 'HTTPS' },
+  { value: 'socks4', label: 'SOCKS4' },
+  { value: 'socks5', label: 'SOCKS5' },
+];
 
 export function renderProfile(container, options, profileName, markDirty) {
   const key = '+' + profileName;
@@ -63,9 +68,13 @@ function renderFixed(container, profile, options, markDirty) {
   const fields = document.getElementById('proxy-fields');
   for (const s of SCHEMES) {
     const proxy = profile[s.key] || { scheme: 'http', host: '', port: 8080 };
+    const schemeOpts = PROXY_SCHEMES.map(ps =>
+      `<option value="${ps.value}" ${ps.value === (proxy.scheme || 'http') ? 'selected' : ''}>${ps.label}</option>`
+    ).join('');
     fields.innerHTML += `
       <div class="proxy-grid" data-key="${s.key}">
         <label>${s.label}</label>
+        <select class="proxy-scheme" style="width:90px;">${schemeOpts}</select>
         <input type="text" class="proxy-host" value="${esc(proxy.host || '')}" placeholder="proxy.example.com">
         <input type="number" class="proxy-port" value="${proxy.port || 8080}" min="1" max="65535" style="width:80px;">
       </div>`;
@@ -79,16 +88,18 @@ function renderFixed(container, profile, options, markDirty) {
 
   fields.querySelectorAll('.proxy-grid').forEach(row => {
     const key = row.dataset.key;
+    const schemeEl = row.querySelector('.proxy-scheme');
     const hostEl = row.querySelector('.proxy-host');
     const portEl = row.querySelector('.proxy-port');
     const update = () => {
       if (hostEl.value) {
-        profile[key] = { scheme: 'http', host: hostEl.value, port: parseInt(portEl.value) || 8080 };
+        profile[key] = { scheme: schemeEl.value, host: hostEl.value, port: parseInt(portEl.value) || 8080 };
       } else {
         delete profile[key];
       }
       markDirty();
     };
+    schemeEl.addEventListener('change', update);
     hostEl.addEventListener('input', update);
     portEl.addEventListener('input', update);
   });

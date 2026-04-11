@@ -78,7 +78,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .sortable-ghost { opacity: 0.4; }
 
 /* Proxy fields */
-.proxy-grid { display: grid; grid-template-columns: 80px 1fr 80px; gap: 8px; align-items: center; margin-bottom: 8px; }
+.proxy-grid { display: grid; grid-template-columns: 80px 90px 1fr 80px; gap: 8px; align-items: center; margin-bottom: 8px; }
 .proxy-grid label { font-weight: 500; font-size: 13px; }
 .bypass-list textarea { height: 80px; font-family: monospace; font-size: 12px; }
 
