@@ -96,8 +96,8 @@ btnApply.addEventListener('click', async () => {
   try {
     btnApply.textContent = 'Applying…';
     btnApply.disabled = true;
-    const patch = buildPatch(originalOptions, options);
-    options = await patchOptions(patch);
+    // Use reset() which accepts full options, not patch() which needs a delta
+    options = await resetOptions(options);
     originalOptions = JSON.parse(JSON.stringify(options));
     dirty = false;
     updateDirtyState();
@@ -105,7 +105,8 @@ btnApply.addEventListener('click', async () => {
     buildNav();
   } catch (e) {
     btnApply.textContent = '✓ Apply changes';
-    alert('Failed to apply: ' + e.message);
+    btnApply.disabled = false;
+    alert('Failed to apply: ' + (e.message || JSON.stringify(e)));
   }
 });
 

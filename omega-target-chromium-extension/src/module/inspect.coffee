@@ -22,22 +22,24 @@ module.exports = class Inspect
       "ftp://*/*"
     ]
 
-    # MV3: wrap in try/catch — items may already exist from a previous SW run
-    try chrome.contextMenus.create({
+    # MV3: items may persist from previous SW run. Ignore duplicate errors.
+    ignore = -> chrome.runtime.lastError  # consume the error
+
+    chrome.contextMenus.create({
       id: 'inspectFrame'
       title: chrome.i18n.getMessage('contextMenu_inspectFrame')
       contexts: ['frame']
       documentUrlPatterns: webResource
-    })
+    }, ignore)
 
-    try chrome.contextMenus.create({
+    chrome.contextMenus.create({
       id: 'inspectLink'
       title: chrome.i18n.getMessage('contextMenu_inspectLink')
       contexts: ['link']
       targetUrlPatterns: webResource
-    })
+    }, ignore)
 
-    try chrome.contextMenus.create({
+    chrome.contextMenus.create({
       id: 'inspectElement'
       title: chrome.i18n.getMessage('contextMenu_inspectElement')
       contexts: [
@@ -46,7 +48,7 @@ module.exports = class Inspect
         'audio'
       ]
       targetUrlPatterns: webResource
-    })
+    }, ignore)
 
     @_enabled = true
 
