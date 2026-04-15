@@ -1,4 +1,4 @@
-// MV3 Service Worker — SwitchyOmega
+// MV3 Service Worker — AxyProxy Switcher
 // Polyfills required because the background code was written for MV2 (DOM context).
 
 // === 1. localStorage polyfill ===

@@ -11,7 +11,7 @@ export function renderIO(container, options, reloadOptions) {
     </div>
     <div class="section">
       <div class="section-title">Import</div>
-      <p style="margin-bottom:8px;">Restore from a SwitchyOmega backup file (JSON).</p>
+      <p style="margin-bottom:8px;">Restore from an AxyProxy Switcher backup file (JSON).</p>
       <input type="file" id="file-import" accept=".json,.bak" style="margin-bottom:8px;">
       <div id="import-status"></div>
     </div>

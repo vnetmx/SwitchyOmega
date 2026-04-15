@@ -22,5 +22,6 @@
   },
   "scripts": {
     "dev": "npm link switchyomega-pac && npm link"
-  }
+  },
+  "description": "AxyProxy Switcher - Web UI"
 }

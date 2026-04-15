@@ -12,7 +12,7 @@ angular.module('omega').controller 'SwitchProfileCtrl', ($scope, $rootScope,
 
     eol = '\r\n'
     info = '\n'
-    info += '; Require: SwitchyOmega >= 2.3.2' + eol
+    info += '; Require: AxyProxy Switcher >= 3.1.0' + eol
     info += "; Date: #{new Date().toLocaleDateString()}" + eol
     info += "; Usage: #{trFilter('ruleList_usageUrl')}" + eol
 

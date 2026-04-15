@@ -31,5 +31,6 @@
   "scripts": {
     "dev": "npm link switchyomega-pac && npm link",
     "test": "grunt test"
-  }
+  },
+  "description": "AxyProxy Switcher - Browser target base"
 }

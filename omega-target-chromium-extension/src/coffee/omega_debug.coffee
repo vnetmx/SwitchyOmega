@@ -16,9 +16,9 @@ window.OmegaDebug =
     chrome.storage.local.clear()
     chrome.runtime.reload()
   reportIssue: ->
-    url = 'https://github.com/FelisCatus/SwitchyOmega/issues/new'
+    url = 'https://github.com/vnetmx/SwitchyOmega/issues/new'
     try
       version = OmegaDebug.getProjectVersion()
-      body = "SwitchyOmega #{version}\n#{navigator.userAgent}"
+      body = "AxyProxy Switcher #{version}\n#{navigator.userAgent}"
       url += '?title=&body=' + encodeURIComponent(body)
     chrome.tabs.create(url: url)

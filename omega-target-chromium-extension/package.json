@@ -1,6 +1,6 @@
 {
-  "name": "switchyomega-target-chromium-extension",
-  "version": "0.0.1",
+  "name": "axyproxy-switcher-chromium-extension",
+  "version": "3.1.0",
   "private": true,
   "main": "./index",
   "devDependencies": {
@@ -32,5 +32,6 @@
   },
   "scripts": {
     "dev": "npm link switchyomega-target && npm link switchyomega-web && npm link switchyomega-pac"
-  }
+  },
+  "description": "AxyProxy Switcher - Chromium extension target"
 }

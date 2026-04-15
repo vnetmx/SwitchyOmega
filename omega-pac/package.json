@@ -30,5 +30,6 @@
   "scripts": {
     "dev": "npm link",
     "test": "TZ=Europe/London grunt test"
-  }
+  },
+  "description": "AxyProxy Switcher - PAC generator"
 }
